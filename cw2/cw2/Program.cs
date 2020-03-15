@@ -9,10 +9,10 @@ namespace cw2
     {
         static void loggingErrors(Exception ex)
         {
-            string logpath = @"C:\Users\s18967\Desktop\APBD\cw2";
+            string logpath = @"C:\Users\Admin\Desktop\APBD\cw2\log";
             if (!File.Exists(logpath))
             {
-                File.Create(logpath).Dispose(); //Dispose - doczytaj
+                File.Create(logpath).Dispose();
             }
             using (StreamWriter s = File.AppendText(logpath))
             {
@@ -24,41 +24,106 @@ namespace cw2
         static void Main(string[] args)
         {
             try {
-                String csvpath = Console.ReadLine(); //C:\Users\s18967\Desktop\APBD\cw2\dane.csv
-                String xmlpath = Console.ReadLine(); //C:\Users\s18967\Desktop\APBD\cw2
+                String csvpath = Console.ReadLine(); //C:\Users\Admin\Desktop\APBD\cw2\dane.csv
+                String xmlpath = Console.ReadLine(); //C:\Users\Admin\Desktop\APBD\cw2
                 String format = Console.ReadLine();  //xml
 
-                if (File.Exists(csvpath) && Directory.Exists(xmlpath))
+                if (File.Exists(csvpath) && Directory.Exists(xmlpath) && format.Equals("xml"))
                 {
 
                     String[] source = File.ReadAllLines(csvpath);
 
-                    XElement xml = new XElement("Uczelnia",
-                     from str in source
-                     let fields = str.Split(',')
-                     select new XElement("Studenci",
-                            new XAttribute("indexNumber", "s" + fields[4]),
-                            new XElement("fname", fields[0]),
-                            new XElement("lname", fields[1]),
-                            new XElement("birthdate", fields[5]),
-                            new XElement("email", fields[6]),
-                            new XElement("mothersName", fields[7]),
-                            new XElement("fathersName", fields[8]),
-                            new XElement("studies",
-                                new XElement("name", fields[2]),
-                                new XElement("mode", fields[3])
+                    for ( int i = 0; i<source.Length; i++ )
+                    {
+                        String[] tab = source[i].Split(',');
+                        for ( int j = 0; j<tab.Length; j++)
+                        {
+                            if ( tab[j].Equals("") || tab.Length!=9)
+                            {
+                                i++; j = 0;
+                                throw new Exception("Line " + i + " is damaged, try checking it.");   
+                            }
+                            else
+                            {
+                                XElement xml = new XElement("Uczelnia",
+                                 new XElement("Studenci",
+                                new XAttribute("indexNumber", "s" + tab[4]),
+                                new XElement("fname", tab[0]),
+                                new XElement("lname", tab[1]),
+                                new XElement("birthdate", tab[5]),
+                                new XElement("email", tab[6]),
+                                new XElement("mothersName", tab[7]),
+                                new XElement("fathersName", tab[8]),
+                                new XElement("studies",
+                                    new XElement("name", tab[2]),
+                                    new XElement("mode", tab[3])
                             )
                         )
                      );
+                                xml.Save(String.Concat(xmlpath + @"\result.xml"));
 
-                    xml.Save(String.Concat(xmlpath + "result.xml")); // konkatenacja pozwala nam nazwac plik
+                            }
+                        }
+
+                    }
+                }
+                else if (csvpath.Equals("") || xmlpath.Equals("") || format.Equals(""))
+                {
+                    csvpath = @"C:\Users\Admin\Desktop\APBD\cw2\dane.csv";
+                    xmlpath = @"C:\Users\Admin\Desktop\APBD\cw2";
+                    format = "xml";
+
+                    String[] source = File.ReadAllLines(csvpath);
+
+                    for (int i = 0; i < source.Length; i++)
+                    {
+                        String[] tab = source[i].Split(',');
+                        for (int j = 0; j < tab.Length; j++)
+                        {
+                            if (tab[j].Equals("") || tab.Length != 9)
+                            {
+                                i++; j = 0;
+                                throw new Exception("Line " + i + " is damaged, try checking it.");
+                            }
+                            else
+                            {
+                                XElement xml = new XElement("Uczelnia",
+                                 new XElement("Studenci",
+                                new XAttribute("indexNumber", "s" + tab[4]),
+                                new XElement("fname", tab[0]),
+                                new XElement("lname", tab[1]),
+                                new XElement("birthdate", tab[5]),
+                                new XElement("email", tab[6]),
+                                new XElement("mothersName", tab[7]),
+                                new XElement("fathersName", tab[8]),
+                                new XElement("studies",
+                                    new XElement("name", tab[2]),
+                                    new XElement("mode", tab[3])
+                            )
+                        )
+                     );
+                                xml.Save(String.Concat(xmlpath + @"\result.xml"));
+
+                            }
+                        }
+
+                    }; 
+
                 }
                 else
                 {
                     if (!File.Exists(csvpath))
                     {
+                        Console.WriteLine("Plik " + csvpath + " nie istnieje");
                         throw new Exception("wrong path to csv file");
                     }
+                    else if (!Directory.Exists(xmlpath))
+                    {
+                        Console.WriteLine("Podana ścieżka jest niepoprawna.");
+                        throw new Exception("wrong directory path");
+                    }
+                    else if (!format.Equals("xml"))
+                        throw new Exception("format not in xml");
                 }
             } catch (Exception ex) {
                 loggingErrors(ex);
