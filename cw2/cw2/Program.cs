@@ -115,12 +115,12 @@ namespace cw2
                     if (!File.Exists(csvpath))
                     {
                         Console.WriteLine("Plik " + csvpath + " nie istnieje");
-                        throw new Exception("wrong path to csv file");
+                        throw new FileNotFoundException("wrong path to csv file");
                     }
                     else if (!Directory.Exists(xmlpath))
                     {
                         Console.WriteLine("Podana ścieżka jest niepoprawna.");
-                        throw new Exception("wrong directory path");
+                        throw new ArgumentException("wrong directory path");
                     }
                     else if (!format.Equals("xml"))
                         throw new Exception("format not in xml");
