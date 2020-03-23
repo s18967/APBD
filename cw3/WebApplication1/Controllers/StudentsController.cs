@@ -63,8 +63,5 @@ namespace WebApplication1.cw3
             }
             return Ok("Usuwanie ukończone");
         }
-
-
-
     }
 }
