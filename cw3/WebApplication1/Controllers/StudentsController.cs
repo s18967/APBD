@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.SqlClient;
 using cw3.DAL;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.cw3.Nowy_folder;
@@ -17,22 +18,61 @@ namespace WebApplication1.cw3
         }
 
         [HttpGet]
-        public IActionResult GetStudents(string orderBy)
+        public IActionResult GetStudent()
         {
-            return Ok(_dbService.GetStudents());
+            using (var client = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18967;Integrated Security=True"))
+            using (var com = new SqlCommand())
+            {
+                com.Connection = client;
+                com.CommandText = "select Student.FirstName, Student.LastName, Student.BirthDate, Studies.Name, Enrollment.Semester " +
+                    "from Student inner join Enrollment on Student.IdEnrollment = Enrollment.IdEnrollment " +
+                    "inner join Studies on Enrollment.IdStudy = Studies.IdStudy";
+
+                client.Open();
+                var dr = com.ExecuteReader();
+                String students = "";
+                while (dr.Read())
+                {
+                    var st = new Student();
+                    st.FirstName = dr["FirstName"].ToString();
+                    st.LastName = dr["LastName"].ToString();
+                    st.BirthDate = dr["BirthDate"].ToString();
+                    st.Subject = dr["Name"].ToString();
+                    st.Semester = dr["Semester"].ToString() + " semestr";
+                    students += st.ToString() + "\n";
+                }
+            return Ok(students);
+            }
         }
 
         [HttpGet("{id}")] 
-        public IActionResult GetStudent(int id)
+        public IActionResult GetStudent(String id)
         {
-            if ( id==1 )
+            string myId = "s1234";
+            string SqlID = "'" + id + "'";
+            using (var client = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18967;Integrated Security=True"))
+            using (var com = new SqlCommand())
             {
-                return Ok("Kowalski");
-            }else if ( id == 2)
-            {
-                return Ok("Malewski");
+                com.Connection = client;
+                com.CommandText = "select enrollment.IdEnrollment, semester, Enrollment.IdStudy, StartDate" +
+                    " from studies inner join enrollment on studies.IdStudy=enrollment.IdStudy "
+                    +"inner join Student on Enrollment.IdEnrollment=Student.IdEnrollment where IndexNumber = "+ SqlID;
+                com.Parameters.AddWithValue("id", myId);
+
+                client.Open();
+                var dr = com.ExecuteReader();
+                String student = "";
+                while (dr.Read())
+                {
+                    var st = new Student();
+                    st.IdEnrollment = dr["IdEnrollment"].ToString();
+                    st.Semester = dr["Semester"].ToString() + " semestr";
+                    st.IdStudy = dr["IdStudy"].ToString();
+                    st.StartDate = dr["StartDate"].ToString();
+                    student += st.SecondToString();
+                }
+                return Ok(student);
             }
-            return NotFound("Nie znaleziono studenta");
         }
         
         [HttpPost]
