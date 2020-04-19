@@ -60,6 +60,8 @@ namespace cw6
                         await context.Response.WriteAsync("nie ma studenta otym indeksie");
                         return;
                     }
+                    context.Response.StatusCode = StatusCodes.Status200OK;
+                    await context.Response.WriteAsync(student.ToString());
                     await next();
                 });
             });

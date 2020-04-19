@@ -17,7 +17,12 @@ namespace cw6.Services
             {
                 command.Connection = connection;
                 connection.Open();
-                command.CommandText = "select * from student where indexnumber=@index";
+                command.CommandText = "select Student.IndexNumber, Student.FirstName, Student.LastName, Student.BirthDate," +
+                    "Enrollment.Semester, Studies.Name from student " +
+                    "INNER JOIN Enrollment ON student.IdEnrollment=Enrollment.IdEnrollment" +
+                    "INNER JOIN Studies ON enrollment.IdStudy=Studies.IdStudy" +
+                    "where indexnumber=@index";
+
                 command.Parameters.AddWithValue("index", Index);
                 SqlDataReader dr = command.ExecuteReader();
                 if (dr.Read())
