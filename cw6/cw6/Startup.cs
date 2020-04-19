@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using cw3.DAL;
+using cw6.Middleware;
+using cw6.Models;
+using cw6.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -12,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace WebApplication1
+namespace cw6
 {
     public class Startup
     {
@@ -26,33 +29,40 @@ namespace WebApplication1
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<IDbService, MockDbService>();
-            services.AddTransient<newIDbService, SqlServerDbService>();
+            services.AddScoped<IStudentDbService, SqlServerStudentDbService>();
             services.AddControllers();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IStudentDbService dbService)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-            app.UseMiddleware<LoggingMiddleware>();
 
-            app.Use(async(context, next))=>{
-                if (!context.Response.Headers.ContainsKey("Index"))
+            app.UseMiddleware<LoggingMiddleware>();
+            app.UseWhen(context => context.Request.Path.ToString().Contains("eska"), app =>
+            {
+                app.Use(async (context, next) =>
                 {
-                    context.Response.StatusCode = Microsoft.AspNetCore.Http.StatusCodes.Status401Unauthorized();
-                    await context.Response.WriteAsync("Nie podales loginu i hasla");
-                }
-                else
-                {
-                    //Sprawdzamy czy w bazie danych istnieje SqlConnection
-                    string sindex = context.Request.Headers["Index"].ToString();
-                }
-                await next();
-                    });
+                    if (!context.Request.Headers.ContainsKey("Index"))
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        await context.Response.WriteAsync("brak indeksu");
+                        return;
+                    }
+
+                    Student student = dbService.GetStudent(context.Request.Headers["Index"].ToString());
+                    if (student == null)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        await context.Response.WriteAsync("nie ma studenta otym indeksie");
+                        return;
+                    }
+                    await next();
+                });
+            });
 
             app.UseHttpsRedirection();
 
