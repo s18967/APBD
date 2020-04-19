@@ -34,12 +34,7 @@ namespace cw6.Middleware
                 }
                 // zapis do pliku
                 string logs = log.ToString();
-        
-                if (!File.Exists("Log.txt"))
-                {
-                    File.Create("Log.txt");
-                }
-                
+ 
                 using (var writer = new StreamWriter("Log.txt", true))
                 {
                 writer.WriteLine(log);
