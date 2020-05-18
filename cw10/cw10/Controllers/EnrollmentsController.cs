@@ -1,96 +1,64 @@
-﻿using System.Data.SqlClient;
+﻿using System;
+using System.Data.SqlClient;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using cw10.Models;
+using cw10.Requests;
 using Microsoft.AspNetCore.Mvc;
-/*
+
 namespace cw10.Controllers
 {
     [Route("api/enrollments")]
     [ApiController]
     public class EnrollmentsController : ControllerBase
     {
-        [HttpPost]
-        public IActionResult EnrollStudent(EnrollPromoteStudent request)
+        private readonly s18967Context db;
+
+        public EnrollmentsController(s18967Context _db)
         {
-            var st = new Student();
-            st.Subject = request.Studies;
-            st.Semester = "1";
-            st.LastName = request.LastName;
+            db = _db;
+        }
 
-            using (var connection = new SqlConnection("Data Source=db-mssql;Initial Catalog=s18967;Integrated Security=True"))
-            using (var command = new SqlCommand())
+        [HttpPost]
+        public IActionResult EnrollStudent(EnrollStudentRequest request)
+        {
+            if (!(db.Student.Where(s => s.IndexNumber == request.IndexNumber).Any()))
             {
-
-                command.Connection = connection;
-                connection.Open();
-                var transaction = connection.BeginTransaction();
-
-
-                //1. Czy studia istnieja?
-                try
+                if (db.Studies.Where(s => s.Name == request.Studies).Any())
                 {
-                    command.CommandText = "select IdStudies from Studies where name=@name";
-                    command.Parameters.AddWithValue("name", request.Studies);
+                    var studies = db.Studies.SingleOrDefault(s => s.Name == request.Studies);
+                    var date = db.Enrollment.Max(d => d.StartDate);
 
-                    var dr = command.ExecuteReader();
-
-                    if (!dr.Read())
+                    if (!(db.Enrollment.Where(e => (e.Semester == 1) && (e.IdStudy == studies.IdStudy) && (e.StartDate == date)).Any()))
                     {
-                        transaction.Rollback();
-                        return BadRequest("Studia nie istnieja.");
+                        int id = db.Enrollment.Max(i => i.IdEnrollment);
+                        Enrollment enrollment = new Enrollment
+                        {
+                            IdEnrollment = id,
+                            Semester = 1,
+                            IdStudy = studies.IdStudy,
+                            StartDate = Convert.ToDateTime(DateTime.Now)
+                        };
+                        db.Enrollment.Add(enrollment);
+                        db.SaveChanges();
                     }
-                    int idStudies = (int)dr["IdStudies"];
-                    //Następnie odnajdujemy najnowszy wpis w tabeli Enrollments
-                    //zgodny ze studiami studenta i wartością Semester = 1(student zapisuje się na pierwszy
-                    //semestr).
 
-                    command.CommandText = "select * from Enrollment " +
-                        "where StartDate = (select MAX(StartDate) from Enrollment where idStudy=" + idStudies + ") " +
-                        "AND Semester=1";
-
-                    var execread = command.ExecuteReader();
-
-                    //Jeśli tak wpis nie istnieje to dodajemy go do bazy danych (StartDate ustawiamy na aktualną datę).
-                    //Na końcu dodajemy wpis w tabeli Students.
-                    if (!execread.Read())
+                    var enroll = db.Enrollment.SingleOrDefault(e => (e.Semester == 1) && (e.IdStudy == studies.IdStudy) && (e.StartDate == date));
+                    Student student = new Student
                     {
-                        command.CommandText = "Insert into Enrollment values (" +
-                            "(SELECT MAX(idEnrollment)+1 from Enrollment),1," + idStudies + ",GetDate()";
-                    }
-                    //Pamiętamy o tym, aby sprawdzić czy indeks podany przez studenta jest unikalny. W przeciwnym
-                    //wypadku zgłaszamy błąd.
-                    command.CommandText = "Select * from Student WHERE IndexNumber=@indexNumber";
-                    command.Parameters.AddWithValue("indexNumber", request.IndexNumber);
-
-                    var studentread = command.ExecuteReader();
-
-                    if (!studentread.Read())
-                    {
-                        transaction.Rollback();
-                        return BadRequest("Index jest nieunikalny.");
-                    }
-                    command.CommandText = "Insert into Student values(" +
-                                                                       request.IndexNumber + "," +
-                                                                       request.FirstName + "," +
-                                                                       request.LastName + "," +
-                                                                       request.BirthDate + "," +
-                                                                       idStudies +
-                                                                     ")";
-                    command.ExecuteNonQuery();
-
-                    transaction.Commit();
+                        IndexNumber = request.IndexNumber,
+                        FirstName = request.FirstName,
+                        LastName = request.LastName,
+                        BirthDate = Convert.ToDateTime(request.Birthdate),
+                        IdEnrollment = enroll.IdEnrollment
+                    };
+                    db.Student.Add(student);
+                    db.SaveChanges();
+                    return Ok("Dodano nowego studenta");
                 }
-                catch (SqlException ex)
-                {
-                    transaction.Rollback();
-                }
-
             }
-
-            response.StudiesName = st.Subject;
-            response.Semester = int.Parse(st.Semester);
-            response.LastName = st.LastName;
-            return Ok(response + ". Nie wiem jak zwrocic Created");
+            return NotFound("Podano błędnie, któryś z argumentów wew. requesta");
         }
     }
-}*/
+}
