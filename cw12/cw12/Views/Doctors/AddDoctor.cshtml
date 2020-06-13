@@ -1,0 +1,22 @@
+﻿@model cw12.Models.Doctors
+@{
+    Layout = "../Shared/_Layout.cshtml";
+}
+
+<h1>Dodaj lekarza</h1>
+<form method="post" action="/doctors/create">
+    <div class="row">
+        <div class="input-field col s6">
+            <label>Imię</label>
+            <input name="FirstName" type="text" />
+            <span>@Html.ValidationMessageFor(d=>d.FirstName)</span>
+        </div>
+        <div class="input-field col s6">
+            <label>Nazwisko</label>
+            <input name="LastName" type="text" />
+            <span>@Html.ValidationMessageFor(d => d.LastName)</span>
+        </div>
+    </div>
+    <input type="submit" value="Wyślij" class="btn"/>
+</form>
+

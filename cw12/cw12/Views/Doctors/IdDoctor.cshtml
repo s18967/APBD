@@ -1,0 +1,27 @@
+﻿@model IEnumerable<cw12.Models.Doctors>
+
+@{ 
+    Layout = "../Shared/_Layout.cshtml";
+}
+
+<h1>Lista lekarzy</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Imię</th>
+            <th>Nazwisko</th>
+            <th>Email</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var d in Model)
+        {
+            <tr>
+                <td>@d.FirstName</td>
+                <td>@d.LastName</td>
+                <td>@d.Email</td>
+            </tr>
+        }
+    </tbody>
+</table>
