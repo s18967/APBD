@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using probny_kolos_2.Models;
 
@@ -25,14 +26,54 @@ namespace probny_kolos_2.Controllers
         public IActionResult GetKlients()
         {
             string result = "";
+            List<int> idZamowien;
+            List<int> idZamowWyrob;
+            Dictionary<int, int> iloscZamowionychRzeczy;
 
-            foreach (var d in db.Klients)
+
+            foreach (var klient in db.Klients)
             {
-                result = "";
-            }
+                idZamowien = new List<int>();
+                idZamowWyrob = new List<int>();
+                iloscZamowionychRzeczy = new Dictionary<int, int>();
 
-            return Ok(result);
+                foreach (var zamowienie in db.Zamowienia)
+                {
+                    if (zamowienie.IdKlient == klient.IdKlient)
+                    {
+                        idZamowien.Add(zamowienie.IdZamowienia);
+                    }
+                    foreach (var z in db.Zamow_wyroby)
+                    {
+                        if (idZamowien.Contains(z.IdZamowienia))
+                        {
+                            if (!iloscZamowionychRzeczy.ContainsKey(z.IdWyrobuCukierniczego))
+                                iloscZamowionychRzeczy.Add(z.IdWyrobuCukierniczego, z.Ilosc);
+                            else
+                            {
+                                int ilosc = iloscZamowionychRzeczy.GetValueOrDefault(z.IdWyrobuCukierniczego);
+                                iloscZamowionychRzeczy.Remove(z.IdWyrobuCukierniczego);
+                                iloscZamowionychRzeczy.Add(z.IdWyrobuCukierniczego, ilosc + z.Ilosc);
+                            }
+                        }
+                        else
+                        {
+                            return NotFound("Błąd w systemie, Zamowienie nie zawiera żadnego wyrobu");
+                        }
+                    }
+                }
+                foreach (var row in iloscZamowionychRzeczy)
+                {
+                    var wyrob = db.WyrobyCukiernicze.Where(w => w.IdWyrobuCukierniczego == row.Key).FirstOrDefault();
+                    string nazwa = wyrob.Nazwa;
+
+                    result += nazwa + " " + row.Value + "\n";
+                }
+                return Ok(result);
+            }
+            return NotFound("Nie istnieje klient o takim nazwisku.");
         }
+    
         [HttpGet("{nazwisko}")]
         public IActionResult GetKlient(string nazwisko)
         {

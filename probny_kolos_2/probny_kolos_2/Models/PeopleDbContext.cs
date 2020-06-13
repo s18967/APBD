@@ -10,7 +10,7 @@ namespace probny_kolos_2.Models
     {
         public DbSet<Klient> Klients { get; set; }
         public DbSet<WyrobCukierniczy> WyrobyCukiernicze { get; set; }
-        public DbSet<Pracownik> Pracownicy{ get; set; }
+        public DbSet<Pracownik> Pracownicy { get; set; }
         public DbSet<Zamowienie> Zamowienia { get; set; }
         public DbSet<Zamow_wyrob> Zamow_wyroby { get; set; }
 
@@ -21,13 +21,11 @@ namespace probny_kolos_2.Models
         {
 
         }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<Zamow_wyrob>()
-                        .HasKey(zw => new { zw.IdWyrobuCukierniczego, zw.IdZamowienia });
-            
+   
             var dictKlient = new List<Klient>();
             dictKlient.Add(new Klient { IdKlient = 1, Imie = "test1", Nazwisko = "test1"});
             dictKlient.Add(new Klient { IdKlient = 2, Imie = "test2", Nazwisko = "test2"});
@@ -62,6 +60,10 @@ namespace probny_kolos_2.Models
             dictZamowWyrob.Add(new Zamow_wyrob { IdWyrobuCukierniczego = 3, IdZamowienia = 1, Ilosc = 7});
 
             modelBuilder.Entity<Zamow_wyrob>().HasData(dictZamowWyrob);
+
+            modelBuilder.Entity<Zamow_wyrob>()
+                        .HasKey(zw => new { zw.IdWyrobuCukierniczego, zw.IdZamowienia });
+
         }
 
     }
